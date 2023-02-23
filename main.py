@@ -5,7 +5,7 @@ import traceback
 from style import style_application
 
 from PySide6.QtCore import QUrl, QTimeZone, QTimer, QCoreApplication, QRect, QMetaObject, Qt, QSize, Signal
-from PySide6.QtGui import QIcon, QAction, QCursor, QPixmap
+from PySide6.QtGui import QIcon, QAction, QCursor, QPixmap, QMouseEvent
 from PySide6.QtWidgets import QApplication, QMainWindow, QStatusBar, QTabWidget, QToolBar, QTabBar, QToolButton, \
     QPushButton, QStyle, QWidget, QHBoxLayout, QLabel, QLineEdit, QVBoxLayout, QSizePolicy, QSplitter
 from PySide6.QtWebEngineWidgets import QWebEngineView
@@ -20,6 +20,7 @@ class WebBrowser(QMainWindow):
         self.profile = None
         self.tabs = QTabWidget(self)
         self.tabs.tabCloseRequested.connect(lambda index: self.close_current_tab(index))
+        self.tabs.tabBarClicked.connect(self.click_to_tab)
 
         # Properties
         self.tabs.setTabsClosable(True)
@@ -40,6 +41,15 @@ class WebBrowser(QMainWindow):
         self.setGeometry(100, 100, 800, 600)
         self.connect_proxy()
         self.settings_browser()
+
+    def click_to_tab(self, index):
+        mouse_button = self.mouseButton()
+        if mouse_button == "MidButton":
+            self.close_current_tab(index)
+
+    def mouseButton(self):
+        buttons = {Qt.LeftButton: 'LeftButton', Qt.MouseButton.RightButton: 'RightButton', Qt.MouseButton.MiddleButton: 'MidButton'}
+        return buttons.get(QApplication.mouseButtons(), 'Unknown')
 
     def settings_browser(self):
         # Create a profile with WebRTC enabled
@@ -184,8 +194,9 @@ class WebBrowser(QMainWindow):
         toolButton.setText("")
 
         name_tab = QLabel(widget)
-        name_tab.setText(label)
-        name_tab.setScaledContents(True)
+        name_tab.setText(str(label))
+        name_tab.adjustSize()
+
         size = QSize(18, 18)
 
         icon = QPixmap("images/refresh.png")
@@ -200,6 +211,7 @@ class WebBrowser(QMainWindow):
 
         browser, wid = self.get_page_browser(qurl, name_tab)
         i = self.tabs.addTab(browser, "")
+        self.tabs.update()
         self.tabs.setCurrentIndex(i)
 
         # Add close button to tab
@@ -237,9 +249,12 @@ class WebBrowser(QMainWindow):
         if len(title) > 15:
             title = (title[:15]).strip() + "..."
 
-        name_tab.setText(title)
-        if not isinstance(q, bool):
-            url_bar.setText(q.toString())
+        try:
+            name_tab.setText(title)
+            if not isinstance(q, bool):
+                url_bar.setText(q.toString())
+        except:
+            pass
 
 
 if __name__ == '__main__':
