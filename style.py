@@ -1,7 +1,7 @@
 style_application = """
 
 QTabBar::tab {
-    max-width: 180px;
+    max-width: 200px;
 }
 QTabBar {
     margin: 0px;

@@ -70,7 +70,7 @@ class WebBrowser(QMainWindow):
         self.proxy_auth.setPassword("6QNzMN")
         QNetworkProxy.setApplicationProxy(self.proxy_auth)
 
-    def get_page_browser(self, qurl, name_tab):
+    def get_page_browser(self, qurl, name_tab, icons):
         verticalLayout_2 = QVBoxLayout(self)
         verticalLayout_2.setObjectName(u"verticalLayout_2")
         widget = QWidget(self)
@@ -157,11 +157,22 @@ class WebBrowser(QMainWindow):
 
         page = QWebEnginePage(self.profile, browser)
         page.triggerAction(QWebEnginePage.InspectElement)
+        page.iconChanged.connect(lambda event: self.set_icon_page(event, icons))
+
         browser.setPage(page)
         browser.setUrl(qurl)
 
         self.start_script(browser)
         return widget, browser
+
+    def set_icon_page(self, event, icons):
+        # Get the web page icon as a QIcon
+        icon_qt = QIcon(event)
+        if icon_qt.isNull():
+            icon_qt = QIcon("images/load.gif")
+
+        # Set the web page icon to the label
+        icons.setPixmap(icon_qt.pixmap(100, 100))
 
     def add_new_tab(self, qurl=None, label=None):
         if qurl is None:
@@ -199,9 +210,9 @@ class WebBrowser(QMainWindow):
 
         size = QSize(18, 18)
 
-        icon = QPixmap("images/refresh.png")
+        icon = QIcon("images/load.gif")
         icons = QLabel(widget)
-        icons.setPixmap(icon)
+        icons.setPixmap(icon.pixmap(100, 100))
         icons.setFixedSize(size)
         icons.setScaledContents(True)
         icons.setGeometry(1, 1, 18, 18)
@@ -209,7 +220,7 @@ class WebBrowser(QMainWindow):
         horizontalLayout.addWidget(icons, 0, Qt.AlignmentFlag.AlignLeft)
         horizontalLayout.addWidget(name_tab, 1, Qt.AlignmentFlag.AlignLeft)
 
-        browser, wid = self.get_page_browser(qurl, name_tab)
+        browser, wid = self.get_page_browser(qurl, name_tab, icons)
         i = self.tabs.addTab(browser, "")
         self.tabs.update()
         self.tabs.setCurrentIndex(i)
@@ -240,14 +251,14 @@ class WebBrowser(QMainWindow):
 
     def update_url_bar(self, url_bar, q, brow, name_tab):
         title = brow.title()
+        if not title:
+            title = "Новая вкладка"
+
         if title == "about:blank":
             title = "Новая вкладка"
 
         if title.startswith("http"):
             title = "Загрузка..."
-
-        if len(title) > 15:
-            title = (title[:15]).strip() + "..."
 
         try:
             name_tab.setText(title)
