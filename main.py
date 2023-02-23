@@ -19,6 +19,8 @@ class WebBrowser(QMainWindow):
 
         self.profile = None
         self.tabs = QTabWidget(self)
+        self.tabs.tabCloseRequested.connect(lambda index: self.close_current_tab(index))
+
         # Properties
         self.tabs.setTabsClosable(True)
         self.tabs.setMovable(True)
@@ -151,13 +153,23 @@ class WebBrowser(QMainWindow):
         self.start_script(browser)
         return widget, browser
 
-    def add_new_tab(self, qurl=None, label="Новая вкладка"):
+    def add_new_tab(self, qurl=None, label=None):
         if qurl is None:
             qurl = QUrl('')
         else:
             qurl = QUrl(qurl)
 
+        if label is None:
+            label = "Новая вкладка"
+
         widget = QWidget(self.tabs)
+        widget.adjustSize()
+        sizePolicy1 = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        sizePolicy1.setHorizontalStretch(0)
+        sizePolicy1.setVerticalStretch(0)
+        sizePolicy1.setWidthForHeight(widget.sizePolicy().hasWidthForHeight())
+        widget.setSizePolicy(sizePolicy1)
+
         widget.setStyleSheet("* {"
                              "margin: 0px;"
                              "padding: 0px;"
@@ -173,6 +185,7 @@ class WebBrowser(QMainWindow):
 
         name_tab = QLabel(widget)
         name_tab.setText(label)
+        name_tab.setScaledContents(True)
         size = QSize(18, 18)
 
         icon = QPixmap("images/refresh.png")
@@ -180,33 +193,22 @@ class WebBrowser(QMainWindow):
         icons.setPixmap(icon)
         icons.setFixedSize(size)
         icons.setScaledContents(True)
+        icons.setGeometry(1, 1, 18, 18)
 
         horizontalLayout.addWidget(icons, 0, Qt.AlignmentFlag.AlignLeft)
-        horizontalLayout.addWidget(name_tab, 1, Qt.AlignmentFlag.AlignRight)
-        horizontalLayout.addWidget(toolButton, 2, Qt.AlignmentFlag.AlignLeft)
-
-        icon = QIcon()
-        icon.addFile('images/close.png', QSize(), QIcon.Normal, QIcon.Off)
-        toolButton.setIcon(icon)
-        toolButton.setCursor(QCursor(Qt.PointingHandCursor))
-
-        toolButton.setFixedSize(size)
-        toolButton.setIconSize(size)
+        horizontalLayout.addWidget(name_tab, 1, Qt.AlignmentFlag.AlignLeft)
 
         browser, wid = self.get_page_browser(qurl, name_tab)
         i = self.tabs.addTab(browser, "")
-        toolButton.clicked.connect(self.close_current_tab)
         self.tabs.setCurrentIndex(i)
 
         # Add close button to tab
+        self.tabs.tabBar().setTabButton(i, QTabBar.ButtonPosition.LeftSide, widget)
 
-        self.tabs.tabBar().setTabButton(i, QTabBar.RightSide, widget)
-
-    def close_current_tab(self):
+    def close_current_tab(self, index):
         if self.tabs.count() == 1:
             self.close()
         else:
-            index = self.tabs.currentIndex()
             self.tabs.removeTab(index)
 
     @staticmethod
@@ -225,7 +227,6 @@ class WebBrowser(QMainWindow):
         brow.setUrl(QUrl(url))
 
     def update_url_bar(self, url_bar, q, brow, name_tab):
-        index = self.tabs.currentIndex()
         title = brow.title()
         if title == "about:blank":
             title = "Новая вкладка"
