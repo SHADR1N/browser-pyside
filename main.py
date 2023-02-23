@@ -2,8 +2,10 @@ import sys
 import time
 import traceback
 
+from style import style_application
+
 from PySide6.QtCore import QUrl, QTimeZone, QTimer, QCoreApplication, QRect, QMetaObject, Qt, QSize, Signal
-from PySide6.QtGui import QIcon, QAction, QCursor
+from PySide6.QtGui import QIcon, QAction, QCursor, QPixmap
 from PySide6.QtWidgets import QApplication, QMainWindow, QStatusBar, QTabWidget, QToolBar, QTabBar, QToolButton, \
     QPushButton, QStyle, QWidget, QHBoxLayout, QLabel, QLineEdit, QVBoxLayout, QSizePolicy, QSplitter
 from PySide6.QtWebEngineWidgets import QWebEngineView
@@ -17,11 +19,11 @@ class WebBrowser(QMainWindow):
 
         self.profile = None
         self.tabs = QTabWidget(self)
-
         # Properties
-        self.tabs.setMovable(True)
         self.tabs.setTabsClosable(True)
-
+        self.tabs.setMovable(True)
+        self.tabs.setDocumentMode(True)
+        self.tabs.setElideMode(Qt.ElideRight)
         self.setCentralWidget(self.tabs)
 
         icon = QIcon("images/add.png")
@@ -56,7 +58,7 @@ class WebBrowser(QMainWindow):
         self.proxy_auth.setPassword("6QNzMN")
         QNetworkProxy.setApplicationProxy(self.proxy_auth)
 
-    def get_page_browser(self, qurl):
+    def get_page_browser(self, qurl, name_tab):
         verticalLayout_2 = QVBoxLayout(self)
         verticalLayout_2.setObjectName(u"verticalLayout_2")
         widget = QWidget(self)
@@ -138,11 +140,14 @@ class WebBrowser(QMainWindow):
         verticalLayout.addWidget(widget_2)
 
         verticalLayout_2.addWidget(widget)
-        browser.urlChanged.connect(lambda event: self.update_url_bar(lineEdit, event, browser))
+        browser.urlChanged.connect(lambda event: self.update_url_bar(lineEdit, event, browser, name_tab))
+        browser.loadFinished.connect(lambda event: self.update_url_bar(lineEdit, event, browser, name_tab))
+
         page = QWebEnginePage(self.profile, browser)
         page.triggerAction(QWebEnginePage.InspectElement)
         browser.setPage(page)
         browser.setUrl(qurl)
+
         self.start_script(browser)
         return widget, browser
 
@@ -152,9 +157,7 @@ class WebBrowser(QMainWindow):
         else:
             qurl = QUrl(qurl)
 
-        browser, wid = self.get_page_browser(qurl)
-
-        widget = QWidget(self)
+        widget = QWidget(self.tabs)
         widget.setStyleSheet("* {"
                              "margin: 0px;"
                              "padding: 0px;"
@@ -162,27 +165,41 @@ class WebBrowser(QMainWindow):
                              "}")
         widget.setObjectName(u"widget")
         horizontalLayout = QHBoxLayout(widget)
-        horizontalLayout.setSpacing(0)
+        horizontalLayout.setSpacing(5)
         horizontalLayout.setObjectName(u"horizontalLayout")
 
         toolButton = QPushButton(widget)
         toolButton.setText("")
-        horizontalLayout.addWidget(toolButton, 0, Qt.AlignmentFlag.AlignCenter)
+
+        name_tab = QLabel(widget)
+        name_tab.setText(label)
+        size = QSize(18, 18)
+
+        icon = QPixmap("images/refresh.png")
+        icons = QLabel(widget)
+        icons.setPixmap(icon)
+        icons.setFixedSize(size)
+        icons.setScaledContents(True)
+
+        horizontalLayout.addWidget(icons, 0, Qt.AlignmentFlag.AlignLeft)
+        horizontalLayout.addWidget(name_tab, 1, Qt.AlignmentFlag.AlignRight)
+        horizontalLayout.addWidget(toolButton, 2, Qt.AlignmentFlag.AlignLeft)
 
         icon = QIcon()
         icon.addFile('images/close.png', QSize(), QIcon.Normal, QIcon.Off)
         toolButton.setIcon(icon)
-        size = QSize(18, 18)
         toolButton.setCursor(QCursor(Qt.PointingHandCursor))
 
         toolButton.setFixedSize(size)
         toolButton.setIconSize(size)
 
-        i = self.tabs.addTab(browser, label)
+        browser, wid = self.get_page_browser(qurl, name_tab)
+        i = self.tabs.addTab(browser, "")
         toolButton.clicked.connect(self.close_current_tab)
         self.tabs.setCurrentIndex(i)
 
         # Add close button to tab
+
         self.tabs.tabBar().setTabButton(i, QTabBar.RightSide, widget)
 
     def close_current_tab(self):
@@ -202,19 +219,31 @@ class WebBrowser(QMainWindow):
             script = file.read()
         browser.page().runJavaScript(script)
 
-    def navigate_to_url(self, url_bar, brow):
+    @staticmethod
+    def navigate_to_url(url_bar, brow):
         url = url_bar.text()
         brow.setUrl(QUrl(url))
 
-    def update_url_bar(self, url_bar, q, brow):
+    def update_url_bar(self, url_bar, q, brow, name_tab):
         index = self.tabs.currentIndex()
-        self.tabs.setTabText(index, brow.title())
-        url_bar.setText(q.toString())
+        title = brow.title()
+        if title == "about:blank":
+            title = "Новая вкладка"
+
+        if title.startswith("http"):
+            title = "Загрузка..."
+
+        if len(title) > 15:
+            title = (title[:15]).strip() + "..."
+
+        name_tab.setText(title)
+        if not isinstance(q, bool):
+            url_bar.setText(q.toString())
 
 
 if __name__ == '__main__':
-    app = QApplication(sys.argv)
-
+    app = QApplication(["", '--no-sandbox'])
+    app.setStyleSheet(style_application)
     browser = WebBrowser()
     browser.show()
 
