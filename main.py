@@ -30,9 +30,10 @@ class WebBrowser(QMainWindow):
         self.setCentralWidget(self.tabs)
 
         icon = QIcon("images/add.png")
-        size = QSize(20, 20)
+        size = QSize(40, 40)
 
         self.add_tab_button = QPushButton(self)
+        self.add_tab_button.setObjectName(u"new_tab")
         self.add_tab_button.setIcon(icon)
         self.add_tab_button.setFixedSize(size)
 
@@ -169,7 +170,7 @@ class WebBrowser(QMainWindow):
         # Get the web page icon as a QIcon
         icon_qt = QIcon(event)
         if icon_qt.isNull():
-            icon_qt = QIcon("images/load.gif")
+            icon_qt = QIcon("images/load.png")
 
         # Set the web page icon to the label
         icons.setPixmap(icon_qt.pixmap(100, 100))
@@ -210,7 +211,7 @@ class WebBrowser(QMainWindow):
 
         size = QSize(18, 18)
 
-        icon = QIcon("images/load.gif")
+        icon = QIcon("images/load.png")
         icons = QLabel(widget)
         icons.setPixmap(icon.pixmap(100, 100))
         icons.setFixedSize(size)
@@ -251,6 +252,7 @@ class WebBrowser(QMainWindow):
 
     def update_url_bar(self, url_bar, q, brow, name_tab):
         title = brow.title()
+
         if not title:
             title = "Новая вкладка"
 
