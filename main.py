@@ -280,5 +280,4 @@ if __name__ == '__main__':
     app.setWindowIcon(QPixmap("images/icon.png"))
     browser = WebBrowser()
     browser.show()
-
     sys.exit(app.exec())
