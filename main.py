@@ -16,8 +16,9 @@ from PySide6.QtWebEngineCore import QWebEngineSettings, QWebEngineProfile, QWebE
 class WebBrowser(QMainWindow):
     def __init__(self):
         super().__init__()
-
+        self.proxy_auth = None
         self.profile = None
+
         self.tabs = QTabWidget(self)
         self.tabs.tabCloseRequested.connect(lambda index: self.close_current_tab(index))
         self.tabs.tabBarClicked.connect(self.click_to_tab)
@@ -31,7 +32,6 @@ class WebBrowser(QMainWindow):
 
         icon = QIcon("images/add.png")
         size = QSize(40, 40)
-
         self.add_tab_button = QPushButton(self)
         self.add_tab_button.setObjectName(u"new_tab")
         self.add_tab_button.setIcon(icon)
@@ -40,7 +40,9 @@ class WebBrowser(QMainWindow):
         self.add_tab_button.clicked.connect(self.add_new_tab)
         self.tabs.setCornerWidget(self.add_tab_button, Qt.Corner.TopRightCorner)
         self.setGeometry(100, 100, 800, 600)
-        self.connect_proxy()
+
+        host = port = login = password = None
+        self.connect_proxy(host, port, login, password)
         self.settings_browser()
 
     def click_to_tab(self, index):
@@ -57,19 +59,20 @@ class WebBrowser(QMainWindow):
         self.profile = QWebEngineProfile.defaultProfile()
         settings = self.profile.settings()
 
-        settings.setAttribute(QWebEngineSettings.WebAttribute.WebRTCPublicInterfacesOnly, False)
+        settings.setAttribute(QWebEngineSettings.WebAttribute.WebRTCPublicInterfacesOnly, True)
         settings.setAttribute(QWebEngineSettings.WebAttribute.WebGLEnabled, False)
         self.add_new_tab(qurl="https://browserleaks.com/webrtc")
 
-    def connect_proxy(self):
+    def connect_proxy(self, host, port, login, password):
         # Add user proxy authentication
-        self.proxy_auth = QNetworkProxy()
-        self.proxy_auth.setType(QNetworkProxy.HttpProxy)
-        self.proxy_auth.setHostName("138.128.91.186")
-        self.proxy_auth.setPort(8000)
-        self.proxy_auth.setUser("pcFjWh")
-        self.proxy_auth.setPassword("6QNzMN")
-        QNetworkProxy.setApplicationProxy(self.proxy_auth)
+        if host and port:
+            self.proxy_auth = QNetworkProxy()
+            self.proxy_auth.setType(QNetworkProxy.HttpProxy)
+            self.proxy_auth.setHostName(host)
+            self.proxy_auth.setPort(port)
+            self.proxy_auth.setUser(login)
+            self.proxy_auth.setPassword(password)
+            QNetworkProxy.setApplicationProxy(self.proxy_auth)
 
     def get_page_browser(self, qurl, name_tab, icons):
         verticalLayout_2 = QVBoxLayout(self)
@@ -161,7 +164,7 @@ class WebBrowser(QMainWindow):
         page.iconChanged.connect(lambda event: self.set_icon_page(event, icons))
 
         browser.setPage(page)
-        browser.setUrl(qurl)
+        browser.load(qurl)
 
         self.start_script(browser)
         return widget, browser
@@ -237,7 +240,7 @@ class WebBrowser(QMainWindow):
 
     @staticmethod
     def navigate_home(browser):
-        browser.setUrl(QUrl('https://www.google.com'))
+        browser.load(QUrl('https://www.google.com'))
 
     @staticmethod
     def start_script(browser):
@@ -248,7 +251,7 @@ class WebBrowser(QMainWindow):
     @staticmethod
     def navigate_to_url(url_bar, brow):
         url = url_bar.text()
-        brow.setUrl(QUrl(url))
+        brow.load(QUrl(url))
 
     def update_url_bar(self, url_bar, q, brow, name_tab):
         title = brow.title()
@@ -273,6 +276,8 @@ class WebBrowser(QMainWindow):
 if __name__ == '__main__':
     app = QApplication(["", '--no-sandbox'])
     app.setStyleSheet(style_application)
+    app.setApplicationName("Simple browser v0.1")
+    app.setWindowIcon(QPixmap("images/icon.png"))
     browser = WebBrowser()
     browser.show()
 
