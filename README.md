@@ -6,7 +6,7 @@ This is a simple example of how to make your browser on PySide6.
 ```bash
 git clone https://github.com/SHADR1N/browser-pyside.git
 ```
-![Example](https://github.com/SHADR1N/browser-pyside/tree/master/images/example.png?raw=true)
+![Example](https://github.com/SHADR1N/browser-pyside/blob/master/images/example.png?raw=true)
 
 ## Possibilities
 - Basic features and functions are available to you:
