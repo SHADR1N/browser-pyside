@@ -5,6 +5,7 @@ This is a simple example of how to make your browser on PySide6.
 ## Installation
 ```bash
 git clone https://github.com/SHADR1N/browser-pyside.git
+pip install -r requirements.txt
 ```
 ![Example](https://github.com/SHADR1N/browser-pyside/blob/master/images/example.png?raw=true)
 
